@@ -9,12 +9,17 @@ excel_path = 'Medicine_Inventory_50_Rows.xlsx'
 @st.cache_data
 def load_data():
     try:
-        return pd.read_excel(excel_path)
+        # Try to read the Excel file
+        data = pd.read_excel(excel_path)
+        return data
     except FileNotFoundError:
-        st.error("Excel file not found. Please upload the file or check the file path.")
+        st.error("The Excel file was not found. Please upload a valid file.")
+        return pd.DataFrame()
+    except ValueError as e:
+        st.error(f"Error reading the Excel file: {e}")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"An error occurred while loading the file: {e}")
+        st.error(f"An unexpected error occurred while loading the file: {e}")
         return pd.DataFrame()
 
 # Function to update the Excel sheet
@@ -37,8 +42,11 @@ if data.empty:
     st.warning("No data loaded. Please upload the Excel file.")
     uploaded_file = st.file_uploader("Upload your Excel file", type="xlsx")
     if uploaded_file:
-        data = pd.read_excel(uploaded_file)
-        st.success("File uploaded successfully!")
+        try:
+            data = pd.read_excel(uploaded_file)
+            st.success("File uploaded successfully!")
+        except Exception as e:
+            st.error(f"Error reading the uploaded file: {e}")
 
 if not data.empty:
     # Search for a medicine
@@ -71,15 +79,13 @@ if not data.empty:
     # Update Stock and Expiry
     st.subheader("Update Medicine Details")
     medicine_to_update = st.selectbox("Select Medicine to Update", data['Medicine Name'])
-    if not medicine_to_update:
-        st.warning("Please select a medicine to update.")
-    else:
+    if medicine_to_update:
         new_stock = st.number_input("Enter New Stock", min_value=0, value=int(data.loc[data['Medicine Name'] == medicine_to_update, 'Stock'].values[0]))
-        new_expiry = st.date_input("Enter New Expiry Date", value=pd.to_datetime(data.loc[data['Medicine Name'] == medicine_to_update, 'Expiry'].values[0]))
+        new_expiry = st.date_input("Enter New Expiry Date", value=pd.to_datetime(data.loc[data['Medicine Name'] == medicine_to_update, 'Expiry Date'].values[0]))
 
         if st.button("Update Details"):
             data.loc[data['Medicine Name'] == medicine_to_update, 'Stock'] = new_stock
-            data.loc[data['Medicine Name'] == medicine_to_update, 'Expiry'] = new_expiry
+            data.loc[data['Medicine Name'] == medicine_to_update, 'Expiry Date'] = new_expiry
             update_excel(data)
 
     # Batch Tracking
