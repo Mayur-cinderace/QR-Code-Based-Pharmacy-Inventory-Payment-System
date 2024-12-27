@@ -3,18 +3,26 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 
-# Google Sheet URL and Service Account JSON file path
+# Google Sheet URL
 google_sheet_url = "https://docs.google.com/spreadsheets/d/1XEJUuvDAuWzzjKxgYhAUVi6jDxugTx0Gvn8NyvVZ1w8/edit?gid=1470509049#gid=1470509049"  # Your Google Sheet URL
-service_account_json = "the-last-444604-f954e6785069.json"  # Replace with your service account JSON file path
 
-# Load Google Sheet
+# Load Google Sheet using Streamlit secrets
 def load_google_sheet(sheet_url):
     try:
-        scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        credentials = Credentials.from_service_account_file(service_account_json, scopes=scope)
+        # Fetch the credentials from Streamlit secrets
+        credentials_info = st.secrets["google_credentials"]
+        
+        # Convert the credentials from the secrets into a Credentials object
+        credentials = Credentials.from_service_account_info(credentials_info)
+
+        # Authorize the Google Sheets API client
         gc = gspread.authorize(credentials)
+
+        # Open the spreadsheet and get the first sheet
         spreadsheet = gc.open_by_url(sheet_url)
         sheet = spreadsheet.sheet1  # Access the first sheet
+
+        # Get all records from the sheet and convert them into a pandas DataFrame
         data = pd.DataFrame(sheet.get_all_records())
         return sheet, data
     except Exception as e:
