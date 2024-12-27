@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 
 # File path to your Excel sheet
 excel_path = 'Medicine_Inventory_50_Rows.xlsx'
@@ -9,17 +8,10 @@ excel_path = 'Medicine_Inventory_50_Rows.xlsx'
 @st.cache_data
 def load_data():
     try:
-        # Try to read the Excel file
         data = pd.read_excel(excel_path)
         return data
-    except FileNotFoundError:
-        st.error("The Excel file was not found. Please upload a valid file.")
-        return pd.DataFrame()
-    except ValueError as e:
-        st.error(f"Error reading the Excel file: {e}")
-        return pd.DataFrame()
     except Exception as e:
-        st.error(f"An unexpected error occurred while loading the file: {e}")
+        st.error(f"Error loading the file: {e}")
         return pd.DataFrame()
 
 # Function to update the Excel sheet
@@ -29,70 +21,65 @@ def update_excel(updated_data):
             updated_data.to_excel(writer, index=False)
         st.success("Excel file updated successfully!")
     except Exception as e:
-        st.error(f"An error occurred while updating the Excel file: {e}")
+        st.error(f"Error updating the Excel file: {e}")
 
-# Load the Excel sheet data
+# Load data
 data = load_data()
 
 # Streamlit interface
 st.title("Pharmacy Inventory Management")
 
-# If data is empty, prompt for file upload
-if data.empty:
-    st.warning("No data loaded. Please upload the Excel file.")
-    uploaded_file = st.file_uploader("Upload your Excel file", type="xlsx")
-    if uploaded_file:
-        try:
-            data = pd.read_excel(uploaded_file)
-            st.success("File uploaded successfully!")
-        except Exception as e:
-            st.error(f"Error reading the uploaded file: {e}")
-
 if not data.empty:
-    # Search for a medicine
-    st.sidebar.header("Search and Filter")
-    search_term = st.sidebar.text_input("Search Medicine Name")
-    filtered_data = (
-        data[data['Medicine Name'].str.contains(search_term, case=False, na=False)]
-        if search_term
-        else data
-    )
+    st.subheader("Available Medicines")
+    st.write(data[['Medicine Name', 'Supplier Name', 'Stock', 'Expiry Date', 'Price per Unit']])
 
-    # Filter by Supplier
-    supplier_filter = st.sidebar.selectbox("Filter by Supplier", options=["All"] + list(data['Supplier Name'].unique()))
-    if supplier_filter != "All":
-        filtered_data = filtered_data[filtered_data['Supplier Name'] == supplier_filter]
+    # Order Section
+    st.subheader("Place an Order")
+    
+    # Select Supplier
+    supplier_name = st.selectbox("Select Supplier Name", options=data['Supplier Name'].unique())
+    
+    # Filter data for the selected supplier
+    supplier_data = data[data['Supplier Name'] == supplier_name]
+    
+    # Select Medicines
+    ordered_medicines = st.multiselect("Select Medicines to Order", options=supplier_data['Medicine Name'].unique())
 
-    # Display filtered data
-    st.subheader("Inventory")
-    st.write(filtered_data)
+    if ordered_medicines:
+        order_details = []
+        for medicine in ordered_medicines:
+            # Fetch stock and price for the selected supplier and medicine
+            stock_row = supplier_data[supplier_data['Medicine Name'] == medicine]
+            max_quantity = int(stock_row['Stock'].iloc[0])
+            price_per_unit = float(stock_row['Price per Unit'].iloc[0])
 
-    # Reorder alert
-    st.subheader("Reorder Alerts")
-    reorder_alerts = data[data['Stock'] <= data['Reorder Level']]
-    if reorder_alerts.empty:
-        st.success("No medicines need reordering!")
-    else:
-        st.warning("The following medicines need reordering:")
-        st.write(reorder_alerts)
+            st.write(f"Available stock for {medicine} from {supplier_name}: {max_quantity}")
+            quantity = st.number_input(f"Enter quantity for {medicine}", min_value=0, max_value=max_quantity, step=1)
+            if quantity > 0:
+                order_details.append({
+                    "Medicine Name": medicine,
+                    "Quantity": quantity,
+                    "Price per Unit": price_per_unit,
+                    "Total Price": quantity * price_per_unit,
+                    "Row Index": stock_row.index[0]  # Keep track of the row index for updates
+                })
 
-    # Update Stock and Expiry
-    st.subheader("Update Medicine Details")
-    medicine_to_update = st.selectbox("Select Medicine to Update", data['Medicine Name'])
-    if medicine_to_update:
-        new_stock = st.number_input("Enter New Stock", min_value=0, value=int(data.loc[data['Medicine Name'] == medicine_to_update, 'Stock'].values[0]))
-        new_expiry = st.date_input("Enter New Expiry Date", value=pd.to_datetime(data.loc[data['Medicine Name'] == medicine_to_update, 'Expiry Date'].values[0]))
+        # Generate Bill
+        if order_details:
+            order_df = pd.DataFrame(order_details)
+            st.subheader("Order Summary")
+            st.write(order_df)
+            total_amount = order_df['Total Price'].sum()
+            st.write(f"**Total Amount: ₹{total_amount:.2f}**")
 
-        if st.button("Update Details"):
-            data.loc[data['Medicine Name'] == medicine_to_update, 'Stock'] = new_stock
-            data.loc[data['Medicine Name'] == medicine_to_update, 'Expiry Date'] = new_expiry
-            update_excel(data)
+            # Confirm and Update
+            if st.button("Confirm Order"):
+                for order in order_details:
+                    row_index = order["Row Index"]
+                    quantity_ordered = order["Quantity"]
 
-    # Batch Tracking
-    st.subheader("Batch Information")
-    batch_to_view = st.selectbox("Select Batch Number", data['Batch Number'].unique())
-    st.write(data[data['Batch Number'] == batch_to_view])
+                    # Update the specific row in the dataframe
+                    data.at[row_index, 'Stock'] -= quantity_ordered
 
-    # Optionally display the entire dataset
-    if st.checkbox("Show Full Data"):
-        st.dataframe(data)
+                update_excel(data)
+                st.success(f"Order placed and inventory updated for supplier: {supplier_name}")
