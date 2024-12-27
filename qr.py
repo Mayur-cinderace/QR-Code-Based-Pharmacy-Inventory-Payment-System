@@ -5,6 +5,7 @@ from google.oauth2.service_account import Credentials
 
 # Google Sheet URL
 google_sheet_url = "https://docs.google.com/spreadsheets/d/1XEJUuvDAuWzzjKxgYhAUVi6jDxugTx0Gvn8NyvVZ1w8/edit?gid=1470509049#gid=1470509049"  # Your Google Sheet URL
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
 # Load Google Sheet using Streamlit secrets
 def load_google_sheet(sheet_url):
@@ -13,7 +14,7 @@ def load_google_sheet(sheet_url):
         credentials_info = st.secrets["google_credentials"]
         
         # Convert the credentials from the secrets into a Credentials object
-        credentials = Credentials.from_service_account_info(credentials_info)
+        credentials = Credentials.from_service_account_info(credentials_info, scopes=SCOPES)
 
         # Authorize the Google Sheets API client
         gc = gspread.authorize(credentials)
