@@ -91,7 +91,26 @@ if not data.empty:
             st.subheader("Order Summary")
             st.write(order_df)
             total_amount = order_df['Total Price'].sum()
-            st.write(f"**Total Amount: ₹{total_amount:.2f}**")
+            st.write(f"*Total Amount: ₹{total_amount:.2f}*")
+
+            # Payment Options
+            st.subheader("Payment Options")
+            payment_options = ["Manual Payment", "Razorpay"]
+            selected_payment_option = st.selectbox("Choose Payment Method", payment_options)
+
+            if selected_payment_option == "Manual Payment":
+                payment_reference = st.text_input("Enter Payment Reference (Transaction ID/UPI ID)")
+                payment_amount = st.number_input("Enter Payment Amount", min_value=0.0, step=0.01)
+
+                if st.button("Submit Payment"):
+                    if payment_reference and payment_amount == total_amount:
+                        st.success("Payment details submitted. Your order will be processed.")
+                        # Log the payment details into Google Sheet (not implemented yet)
+                    else:
+                        st.error("Invalid payment details. Please try again.")
+
+            elif selected_payment_option == "Razorpay":
+                st.write("Integration for Razorpay can be added here.")
 
             # Confirm and Update
             if st.button("Confirm Order"):
@@ -110,3 +129,9 @@ if not data.empty:
                 medicines_table.write(data[['Medicine Name', 'Supplier Name', 'Stock', 'Expiry Date', 'Price per Unit']])
 
                 st.success(f"Order placed and inventory updated for supplier: {supplier_name}")
+
+    # Display Payment History
+    st.subheader("Payment History")
+    # This assumes payment history is being logged in the Google Sheet
+    payment_history = data[['Medicine Name', 'Total Price', 'Stock', 'Supplier Name']]
+    st.write(payment_history)
