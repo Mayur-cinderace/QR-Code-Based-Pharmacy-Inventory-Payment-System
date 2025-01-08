@@ -7,17 +7,20 @@ from google.oauth2.service_account import Credentials
 google_sheet_url = "https://docs.google.com/spreadsheets/d/1XEJUuvDAuWzzjKxgYhAUVi6jDxugTx0Gvn8NyvVZ1w8/edit?gid=1470509049#gid=1470509049"  # Your Google Sheet URL
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
-# Load Google Sheet using Streamlit secrets
 def load_google_sheet(sheet_url):
     try:
         credentials_info = st.secrets["google_credentials"]
         credentials = Credentials.from_service_account_info(credentials_info, scopes=SCOPES)
         gc = gspread.authorize(credentials)
         spreadsheet = gc.open_by_url(sheet_url)
-        return spreadsheet
+        
+        # Access the first sheet in the spreadsheet
+        sheet = spreadsheet.sheet1
+        data = pd.DataFrame(sheet.get_all_records())
+        return spreadsheet, sheet, data  # Return all three: spreadsheet, sheet, and data
     except Exception as e:
         st.error(f"Error loading Google Sheet: {e}")
-        return None
+        return None, None, pd.DataFrame()
 
 # Load Payment History
 def load_payment_history(spreadsheet):
