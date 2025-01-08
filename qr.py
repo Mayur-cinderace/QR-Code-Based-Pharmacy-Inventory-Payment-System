@@ -152,7 +152,7 @@ if not data.empty:
 
                 for detail in order_details:
                     detail["Payment Method"] = "UPI"
-                    detail["Payment Reference"] = "UPI Transaction"
+                    detail["Payment Reference"] = shop_upi_id
 
                 log_payment(spreadsheet, order_details)
                 medicines_table.write(data[['Medicine Name', 'Supplier Name', 'Stock', 'Expiry Date', 'Price per Unit']])
