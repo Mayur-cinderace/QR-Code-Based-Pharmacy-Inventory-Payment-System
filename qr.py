@@ -12,7 +12,7 @@ def load_google_sheet(sheet_url):
     try:
         # Fetch the credentials from Streamlit secrets
         credentials_info = st.secrets["google_credentials"]
-        
+
         # Convert the credentials from the secrets into a Credentials object
         credentials = Credentials.from_service_account_info(credentials_info, scopes=SCOPES)
 
@@ -25,10 +25,10 @@ def load_google_sheet(sheet_url):
 
         # Get all records from the sheet and convert them into a pandas DataFrame
         data = pd.DataFrame(sheet.get_all_records())
-        return sheet, data
+        return spreadsheet, sheet, data
     except Exception as e:
         st.error(f"Error loading Google Sheet: {e}")
-        return None, pd.DataFrame()
+        return None, None, pd.DataFrame()
 
 # Update Google Sheet
 def update_google_sheet(sheet, updated_data):
@@ -40,13 +40,13 @@ def update_google_sheet(sheet, updated_data):
         st.error(f"Error updating Google Sheet: {e}")
 
 # Log payment details in the Payment History sheet
-def log_payment(sheet, payment_details):
+def log_payment(spreadsheet, payment_details):
     try:
         # Open or create the "Payment History" sheet
         try:
-            payment_sheet = sheet.spreadsheet.worksheet("Payment History")
+            payment_sheet = spreadsheet.worksheet("Payment History")
         except gspread.exceptions.WorksheetNotFound:
-            payment_sheet = sheet.spreadsheet.add_worksheet(title="Payment History", rows="100", cols="20")
+            payment_sheet = spreadsheet.add_worksheet(title="Payment History", rows="100", cols="20")
             # Add headers to the new sheet
             headers = ["Medicine Name", "Quantity", "Total Price", "Supplier Name", "Payment Method", "Payment Reference", "Timestamp"]
             payment_sheet.append_row(headers)
@@ -72,7 +72,7 @@ def log_payment(sheet, payment_details):
 st.title("Pharmacy Inventory Management")
 
 # Load data from Google Sheet initially
-sheet, data = load_google_sheet(google_sheet_url)
+spreadsheet, sheet, data = load_google_sheet(google_sheet_url)
 
 if not data.empty:
     # Display the initial inventory table
@@ -132,8 +132,6 @@ if not data.empty:
             if selected_payment_option == "Manual Payment":
                 payment_reference = st.text_input("Enter Payment Reference (Transaction ID/UPI ID)")
                 payment_amount = st.number_input("Enter Payment Amount", min_value=0.0, step=0.01)
-                # Debugging: Check the structure of the order details
-                st.write(order_details)  # This will show the content and structure of order_details
 
                 if st.button("Submit Payment"):
                     if payment_reference and payment_amount == total_amount:
@@ -162,7 +160,7 @@ if not data.empty:
                     detail["Payment Method"] = selected_payment_option
                     detail["Payment Reference"] = payment_reference
 
-                log_payment(sheet, order_details)
+                log_payment(spreadsheet, order_details)
 
                 # Update the inventory table shown in the UI
                 medicines_table.write(data[['Medicine Name', 'Supplier Name', 'Stock', 'Expiry Date', 'Price per Unit']])
@@ -172,11 +170,13 @@ if not data.empty:
     # Display Payment History
     st.subheader("Payment History")
     try:
-        payment_sheet = sheet.spreadsheet.worksheet("Payment History")
+        payment_sheet = spreadsheet.worksheet("Payment History")
         payment_history_data = pd.DataFrame(payment_sheet.get_all_records())
         if not payment_history_data.empty:
             st.write(payment_history_data)
         else:
             st.info("No payment history found.")
+    except gspread.exceptions.WorksheetNotFound:
+        st.warning("Payment History sheet does not exist.")
     except Exception as e:
         st.error(f"Error loading payment history: {e}")
