@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+import qrcode
+from io import BytesIO
 
 # Google Sheet URL
 google_sheet_url = "https://docs.google.com/spreadsheets/d/1XEJUuvDAuWzzjKxgYhAUVi6jDxugTx0Gvn8NyvVZ1w8/edit?gid=1470509049#gid=1470509049"
@@ -71,6 +73,20 @@ def log_payment(spreadsheet, payment_details):
     except Exception as e:
         st.error(f"Error logging payment history: {e}")
 
+def generate_upi_qr(shop_upi_id, amount):
+    # Format UPI URL for payment
+    upi_url = f"upi://pay?pa={shop_upi_id}&pn=YourShopName&mc=1234&tid=5678&amount={amount}&cu=INR"
+    
+    # Generate the QR code
+    img = qrcode.make(upi_url)
+    
+    # Convert image to bytes
+    img_byte_arr = BytesIO()
+    img.save(img_byte_arr)
+    img_byte_arr.seek(0)
+    
+    return img_byte_arr
+
 st.title("Pharmacy Inventory Management")
 
 spreadsheet, sheet, data = load_google_sheet(google_sheet_url)
@@ -115,7 +131,16 @@ if not data.empty:
             st.write(f"*Total Amount: ₹{total_amount:.2f}*")
 
             st.subheader("Payment Options")
-            st.write("**Razorpay Integration Coming Soon**")
+            st.write("**Scan the QR code below to pay**")
+            
+            # Replace with your shop's UPI ID
+            shop_upi_id = "test@upi"
+            
+            # Generate the QR code based on the total amount
+            qr_code = generate_upi_qr(shop_upi_id, total_amount)
+
+            # Display the QR code in Streamlit
+            st.image(qr_code)
 
             if st.button("Confirm Order"):
                 for order in order_details:
@@ -126,8 +151,8 @@ if not data.empty:
                 update_google_sheet(sheet, data)
 
                 for detail in order_details:
-                    detail["Payment Method"] = "Razorpay"
-                    detail["Payment Reference"] = "Razorpay Transaction"
+                    detail["Payment Method"] = "UPI"
+                    detail["Payment Reference"] = "UPI Transaction"
 
                 log_payment(spreadsheet, order_details)
                 medicines_table.write(data[['Medicine Name', 'Supplier Name', 'Stock', 'Expiry Date', 'Price per Unit']])
