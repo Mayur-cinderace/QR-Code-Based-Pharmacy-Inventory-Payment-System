@@ -39,6 +39,35 @@ def update_google_sheet(sheet, updated_data):
     except Exception as e:
         st.error(f"Error updating Google Sheet: {e}")
 
+# Log payment details in the Payment History sheet
+def log_payment(sheet, payment_details):
+    try:
+        # Open or create the "Payment History" sheet
+        try:
+            payment_sheet = sheet.spreadsheet.worksheet("Payment History")
+        except gspread.exceptions.WorksheetNotFound:
+            payment_sheet = sheet.spreadsheet.add_worksheet(title="Payment History", rows="100", cols="20")
+            # Add headers to the new sheet
+            headers = ["Medicine Name", "Quantity", "Total Price", "Supplier Name", "Payment Method", "Payment Reference", "Timestamp"]
+            payment_sheet.append_row(headers)
+
+        # Append the new payment details
+        for detail in payment_details:
+            row = [
+                detail["Medicine Name"],
+                detail["Quantity"],
+                detail["Total Price"],
+                detail["Supplier Name"],
+                detail["Payment Method"],
+                detail["Payment Reference"],
+                pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+            ]
+            payment_sheet.append_row(row)
+
+        st.success("Payment history logged successfully!")
+    except Exception as e:
+        st.error(f"Error logging payment history: {e}")
+
 # Streamlit interface
 st.title("Pharmacy Inventory Management")
 
@@ -82,7 +111,8 @@ if not data.empty:
                     "Quantity": quantity,
                     "Price per Unit": price_per_unit,
                     "Total Price": quantity * price_per_unit,
-                    "Row Index": stock_row.index[0]  # Keep track of the row index for updates
+                    "Supplier Name": supplier_name,
+                    "Row Index": stock_row.index[0],  # Keep track of the row index for updates
                 })
 
         # Generate Bill
@@ -98,6 +128,7 @@ if not data.empty:
             payment_options = ["Manual Payment", "Razorpay"]
             selected_payment_option = st.selectbox("Choose Payment Method", payment_options)
 
+            payment_reference = None
             if selected_payment_option == "Manual Payment":
                 payment_reference = st.text_input("Enter Payment Reference (Transaction ID/UPI ID)")
                 payment_amount = st.number_input("Enter Payment Amount", min_value=0.0, step=0.01)
@@ -105,7 +136,6 @@ if not data.empty:
                 if st.button("Submit Payment"):
                     if payment_reference and payment_amount == total_amount:
                         st.success("Payment details submitted. Your order will be processed.")
-                        # Log the payment details into Google Sheet (not implemented yet)
                     else:
                         st.error("Invalid payment details. Please try again.")
 
@@ -125,6 +155,13 @@ if not data.empty:
                 # Update the Google Sheet with the new data
                 update_google_sheet(sheet, data)
 
+                # Log payment details
+                for detail in order_details:
+                    detail["Payment Method"] = selected_payment_option
+                    detail["Payment Reference"] = payment_reference
+
+                log_payment(sheet, order_details)
+
                 # Update the inventory table shown in the UI
                 medicines_table.write(data[['Medicine Name', 'Supplier Name', 'Stock', 'Expiry Date', 'Price per Unit']])
 
@@ -132,6 +169,12 @@ if not data.empty:
 
     # Display Payment History
     st.subheader("Payment History")
-    # This assumes payment history is being logged in the Google Sheet
-    payment_history = data[['Medicine Name', 'Total Price', 'Stock', 'Supplier Name']]
-    st.write(payment_history)
+    try:
+        payment_sheet = sheet.spreadsheet.worksheet("Payment History")
+        payment_history_data = pd.DataFrame(payment_sheet.get_all_records())
+        if not payment_history_data.empty:
+            st.write(payment_history_data)
+        else:
+            st.info("No payment history found.")
+    except Exception as e:
+        st.error(f"Error loading payment history: {e}")
