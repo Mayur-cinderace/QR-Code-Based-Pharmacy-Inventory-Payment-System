@@ -4,7 +4,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 # Google Sheet URL
-google_sheet_url = "https://docs.google.com/spreadsheets/d/1XEJUuvDAuWzzjKxgYhAUVi6jDxugTx0Gvn8NyvVZ1w8/edit?gid=1470509049#gid=1470509049"  # Your Google Sheet URL
+google_sheet_url = "https://docs.google.com/spreadsheets/d/1XEJUuvDAuWzzjKxgYhAUVi6jDxugTx0Gvn8NyvVZ1w8/edit?gid=1470509049#gid=1470509049"
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
 def load_google_sheet(sheet_url):
@@ -115,7 +115,7 @@ if not data.empty:
             st.write(f"*Total Amount: ₹{total_amount:.2f}*")
 
             st.subheader("Payment Options")
-            st.write("Integration for Razorpay can be added here.")
+            st.write("**Razorpay Integration Coming Soon**")
 
             if st.button("Confirm Order"):
                 for order in order_details:
