@@ -10,25 +10,35 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapi
 # Load Google Sheet using Streamlit secrets
 def load_google_sheet(sheet_url):
     try:
-        # Fetch the credentials from Streamlit secrets
         credentials_info = st.secrets["google_credentials"]
-
-        # Convert the credentials from the secrets into a Credentials object
         credentials = Credentials.from_service_account_info(credentials_info, scopes=SCOPES)
-
-        # Authorize the Google Sheets API client
         gc = gspread.authorize(credentials)
-
-        # Open the spreadsheet and get the first sheet
         spreadsheet = gc.open_by_url(sheet_url)
-        sheet = spreadsheet.sheet1  # Access the first sheet
-
-        # Get all records from the sheet and convert them into a pandas DataFrame
-        data = pd.DataFrame(sheet.get_all_records())
-        return spreadsheet, sheet, data
+        return spreadsheet
     except Exception as e:
         st.error(f"Error loading Google Sheet: {e}")
-        return None, None, pd.DataFrame()
+        return None
+
+# Load Payment History
+def load_payment_history(spreadsheet):
+    try:
+        # Attempt to open the "Payment History" sheet
+        try:
+            payment_sheet = spreadsheet.worksheet("Payment History")
+        except gspread.exceptions.WorksheetNotFound:
+            # Create the "Payment History" sheet if it doesn't exist
+            payment_sheet = spreadsheet.add_worksheet(title="Payment History", rows="100", cols="20")
+            headers = ["Medicine Name", "Quantity", "Total Price", "Supplier Name", "Payment Method", "Payment Reference", "Timestamp"]
+            payment_sheet.append_row(headers)
+            st.info("Created a new 'Payment History' sheet as it was missing.")
+
+        # Retrieve data from the sheet
+        data = pd.DataFrame(payment_sheet.get_all_records())
+        return data
+
+    except Exception as e:
+        st.error(f"Error loading payment history: {e}")
+        return pd.DataFrame()
 
 # Update Google Sheet
 def update_google_sheet(sheet, updated_data):
