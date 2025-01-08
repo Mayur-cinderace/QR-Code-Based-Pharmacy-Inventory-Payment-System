@@ -55,10 +55,11 @@ def update_google_sheet(sheet, updated_data):
 # Log payment details in the Payment History sheet
 def log_payment(spreadsheet, payment_details):
     try:
-        # Open or create the "Payment History" sheet
+        # Check if "Payment History" sheet exists
         try:
             payment_sheet = spreadsheet.worksheet("Payment History")
         except gspread.exceptions.WorksheetNotFound:
+            # Create the "Payment History" sheet if it doesn't exist
             payment_sheet = spreadsheet.add_worksheet(title="Payment History", rows="100", cols="20")
             # Add headers to the new sheet
             headers = ["Medicine Name", "Quantity", "Total Price", "Supplier Name", "Payment Method", "Payment Reference", "Timestamp"]
@@ -80,7 +81,7 @@ def log_payment(spreadsheet, payment_details):
         st.success("Payment history logged successfully!")
     except Exception as e:
         st.error(f"Error logging payment history: {e}")
-
+        
 # Streamlit interface
 st.title("Pharmacy Inventory Management")
 
