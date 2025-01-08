@@ -132,6 +132,8 @@ if not data.empty:
             if selected_payment_option == "Manual Payment":
                 payment_reference = st.text_input("Enter Payment Reference (Transaction ID/UPI ID)")
                 payment_amount = st.number_input("Enter Payment Amount", min_value=0.0, step=0.01)
+                # Debugging: Check the structure of the order details
+                st.write(order_details)  # This will show the content and structure of order_details
 
                 if st.button("Submit Payment"):
                     if payment_reference and payment_amount == total_amount:
