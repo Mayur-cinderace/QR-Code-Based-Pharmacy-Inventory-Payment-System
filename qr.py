@@ -112,8 +112,10 @@ if not data.empty:
             price_per_unit = float(stock_row['Price per Unit'].iloc[0])
 
             st.write(f"Available stock for {medicine} from {supplier_name}: {max_quantity}")
-            quantity = st.number_input(f"Enter quantity for {medicine}", min_value=0, max_value=max_quantity, step=1)
-            if (quantity > 10):
+            quantity = st.number_input(f"Enter quantity for {medicine}", min_value=0, step=1)
+            if (max_quantity == 0):
+                st.error(f"{medicine} from {supplier_name} out of stock")
+            elif (quantity > 10):
                 st.error("Cannot order more than 10 strips")
             elif (quantity > max_quantity):
                 st.error(f"Not enough stock available for {medicine}")
