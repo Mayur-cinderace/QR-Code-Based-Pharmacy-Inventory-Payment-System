@@ -113,7 +113,11 @@ if not data.empty:
 
             st.write(f"Available stock for {medicine} from {supplier_name}: {max_quantity}")
             quantity = st.number_input(f"Enter quantity for {medicine}", min_value=0, max_value=max_quantity, step=1)
-            if quantity > 0:
+            if (quantity > 10):
+                st.error("Cannot order more than 10 strips")
+            elif (quantity > max_quantity):
+                st.error(f"Not enough stock available for {medicine}")
+            elif quantity > 0:
                 order_details.append({
                     "Medicine Name": medicine,
                     "Quantity": quantity,
