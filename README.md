@@ -4,10 +4,15 @@ This Streamlit-based web app integrates Google Sheets for managing pharmacy inve
 
 ## 🚀 Features
 📦 Inventory Display – View real-time medicine stock from Google Sheets.
+
 🧾 Order Placement – Select supplier, choose medicines, and specify quantity.
+
 ⚠️ Stock Validation – Prevents over-ordering or selection of out-of-stock items.
+
 💳 Dynamic UPI QR Code Generation – Generates a QR code based on total order amount.
+
 🧠 Google Sheets Integration – Reads and writes inventory and logs payment history.
+
 🗂️ Payment History Tracking – Automatically logs every transaction with timestamp.
 
 ## 🧱 Tech Stack
