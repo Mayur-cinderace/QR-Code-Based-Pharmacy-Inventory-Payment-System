@@ -39,19 +39,19 @@ Google Sheets API
 
 ## 🔧 Setup Instructions
 
-### Clone the Repository
+> ### Clone the Repository
 git clone https://github.com/Mayur-cinderace/QR-Code.git
 
 cd QR-Code
 
-### Create Virtual Environment & Install Dependencies
+> ### Create Virtual Environment & Install Dependencies
 python -m venv venv
 
 source venv/bin/activate     # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 
-### Add Google Credentials
+> ### Add Google Credentials
 Create .streamlit/secrets.toml
 
 [google_credentials]
@@ -68,7 +68,7 @@ client_email = "..."
 
 ...
 
-### Run the App
+> ### Run the App
 
 streamlit run qr_app.py
 
