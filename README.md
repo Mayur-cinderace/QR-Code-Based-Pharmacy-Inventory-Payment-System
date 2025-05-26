@@ -1,4 +1,4 @@
-#💊 QR Code-Based Pharmacy Inventory & Payment System
+# 💊 QR Code-Based Pharmacy Inventory & Payment System
 
 This Streamlit-based web app integrates Google Sheets for managing pharmacy inventory and generates dynamic UPI QR codes for seamless payments. It supports medicine selection by supplier, stock validation, order logging, and real-time inventory updates—all connected to your Google Sheet.
 
